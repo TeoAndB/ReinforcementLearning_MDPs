@@ -273,23 +273,28 @@ def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_ra
     R = get_rewards(mdp, mdp.board)
 
     for episode in range(0,total_episodes):
-        for s in states:
-            a_return = epsilon_greedy(Q, s, epsilon, actions, state_index)
-            a = str(a_return)
-            next_state = mdp.step(s, a)
+        s = init_state
+        for step in range(0, max_steps):
 
-            # observe reward of the next state
-            reward = R[next_state[0], next_state[1]]
+            while s not in mdp.terminal_states:
+                a_return = epsilon_greedy(Q, s, epsilon, actions, state_index)
+                a = str(a_return)
+                next_state = mdp.step(s, a)
 
-            Q_S_A = Q[state_index[s],action_index[a]]
-            max_a_Q_s_next_a = max_a(Q, next_state, state_index, action_index)
-            Q[state_index[s],action_index[a]] = Q_S_A + alpha*(reward + gamma * max_a_Q_s_next_a - Q_S_A)
+                # observe reward of the next state
+                reward = R[next_state[0], next_state[1]]
 
-            # special cases:
-            if s in mdp.terminal_states:
-                Q[state_index[s],action_index[a]] = 0.0
-            if mdp.board[s[0]][s[1]] == "WALL":
-                Q[state_index[s],action_index[a]] = 0.0
+                Q_S_A = Q[state_index[s],action_index[a]]
+                max_a_Q_s_next_a = max_a(Q, next_state, state_index, action_index)
+                Q[state_index[s],action_index[a]] = Q_S_A + alpha*(reward + gamma * max_a_Q_s_next_a - Q_S_A)
+
+                # special cases:
+                if s in mdp.terminal_states:
+                    Q[state_index[s],action_index[a]] = 0.0
+                if mdp.board[s[0]][s[1]] == "WALL":
+                    Q[state_index[s],action_index[a]] = 0.0
+
+                s = next_state
 
         epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate*episode)
 
