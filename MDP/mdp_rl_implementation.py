@@ -58,27 +58,26 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
     U_prime = U_init[:]
 
     gamma = mdp.gamma
-    #states = get_states(mdp.board)
-    states = [(0, 3), (0,2), (0,1), (0,0), (1,3), (1,2), (1,1), (1,0), (2,3), (2,2), (2,1), (2,0)]
-
-    delta = 0.0
-    print(epsilon*(1-gamma)/gamma)
+    states = get_states(mdp.board)
+    #states = [(0, 3), (0,2), (0,1), (0,0), (1,3), (1,2), (1,1), (1,0), (2,3), (2,2), (2,1), (2,0)]
 
     U_prime = np.array(U_prime, dtype=float)
 
-    # test with 0 reward:
+    # test with 0 rewards:
     R = np.zeros(U_prime.shape)
     R[0,3] = 1
     R[1,3] = -1
 
+    # rewards
+    # R = get_rewards(mdp, mdp.board)
+
     print('Rewards')
     print(R)
-    #R = get_rewards(mdp, mdp.board)
 
+    max_iterations = 300
     iterations = 0
     while True:
         print(f'\nITERATION: {iterations}')
-
 
         U = U_prime.copy()
         delta = 0.0
@@ -100,18 +99,16 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
             if np.abs(U_prime[s[0],s[1]] - U[s[0],s[1]]) > delta:
                 delta = np.abs(U_prime[s[0],s[1]] - U[s[0],s[1]])
                 print(f'delta = {delta}')
+                print(f'value bound for delta: {(epsilon*(1-gamma)/gamma)}')
                 if delta < (epsilon*(1-gamma)/gamma):
-                    break
+                    return U
 
 
-            # special case:
+            # special case when we have terminal states or walls:
             if s in mdp.terminal_states:
                 U_prime[s[0], s[1]] = R[s[0], s[1]]
             if mdp.board[s[0]][s[1]] == "WALL":
                 U_prime[s[0], s[1]] = R[s[0], s[1]]
-
-
-
 
         print("Utility: ")
         mdp.print_utility(U)
@@ -121,41 +118,100 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
 
         # testing
         iterations +=1
-        if iterations == 10:
+        if iterations == max_iterations:
             break
 
-
-    return U
+    return U.tolist()
     # ========================
 
-# def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
-#     # Given the mdp, the initial utility of each state - U_init,
-#     #   and the upper limit - epsilon.
-#     # run the value iteration algorithm and
-#     # return: the U obtained at the end of the algorithms' run.
-#     #
-#
-#     # getting the variables we need
-#     U_prime = U_init[:]
-#
-#     gamma = mdp.gamma
-#     #states = get_states(mdp.board)
-#     states = [(0, 3), (0,2), (0,1), (0,0), (1,3), (1,2), (1,1), (1,0), (2,3), (2,2), (2,1), (2,0)]
-#
-#     actions = ["UP", "DOWN", "RIGHT", "LEFT"]
-#
-#     raise NotImplementedError
+# function to return P(s_next | s, a)
+def porbability(s_next, s, a, mdp):
+    transition = mdp.transition_function #{up: probs, down: probs, right: probs, left:probs}
+    actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+    # next possible states given noise
+    next_states_possible = [mdp.step(s, a_i) for a_i in actions]
+    # probs given selected action
+    probabilities = list([transition[a]][0])
+    # print(f's: {s}')
+    # print(f'next states possible {next_states_possible}')
+    # print(f'probabilities: {probabilities}')
 
+    # check if the next state is a possible state:
+    if s_next in next_states_possible:
+
+        # find the index:
+        s_i = next_states_possible.index(s_next)
+        # find probability
+        p = probabilities[s_i]
+
+    else:
+        # state not reachable
+        p = 0.0
+    return float(p)
 
 def get_policy(mdp, U):
-    # TODO:
     # Given the mdp and the utility of each state - U (which satisfies the Belman equation)
     # return: the policy
     #
 
-    # ====== YOUR CODE: ======
-    raise NotImplementedError
-    # ========================
+    states = get_states(mdp.board)
+    gamma = mdp.gamma
+
+    U = np.array(U, dtype=float)
+
+    # policy:
+    P = np.empty(U.shape).tolist()
+
+    # test with 0 rewards:
+    R = np.zeros(U.shape)
+    R[0,3] = 1
+    R[1,3] = -1
+
+    # rewards
+    # R = get_rewards(mdp, mdp.board)
+
+    # print('Rewards')
+    # print(R)
+
+    print(mdp.transition_function)
+    for s in states:
+
+        actions = ["UP", "DOWN","RIGHT","LEFT"]
+
+        expectations = []
+        for a in actions:
+            # iterate per action case
+            next_states = [mdp.step(s,a)]
+
+            values = []
+            for s_next in next_states:
+                probailitiy_val = porbability(s_next, s, a, mdp)
+                inside_sum_value = probailitiy_val * (float(R[s[0], s[1]]) + gamma * float(U[s_next[0], s_next[1]]))
+                values.append(inside_sum_value)
+            expectation_sum = sum(values)
+            expectations.append(expectation_sum)
+
+        # maximum expectation value:
+        max_val_exp = max(expectations)
+        # index
+        idx_max_val_exp = expectations.index(max_val_exp)
+        best_action = actions[idx_max_val_exp]
+        # print(f'best action: {best_action}')
+
+        # add to policy
+        P[s[0]][s[1]] = best_action
+
+        # special cases:
+        if s in mdp.terminal_states:
+            P[s[0]][s[1]] = 0
+        if mdp.board[s[0]][s[1]] == "WALL":
+            P[s[0]][s[1]] = 'WALL'
+
+        # P = [['UP', 'UP', 'UP', 0],
+        #           ['UP', 'WALL', 'UP', 0],
+        #           ['UP', 'UP', 'UP', 'UP']]
+
+    return P
 
 
 def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_rate=0.7, epsilon=1.0,
