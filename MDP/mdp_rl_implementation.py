@@ -2,7 +2,6 @@ from copy import deepcopy
 import random
 import numpy as np
 
-
 # return positions/states given a board (2d array)
 def get_states(board):
     positions = []
@@ -64,12 +63,12 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
     U_prime = np.array(U_prime, dtype=float)
 
     # test with 0 rewards:
-    R = np.zeros(U_prime.shape)
-    R[0,3] = 1
-    R[1,3] = -1
+    # R = np.zeros(U_prime.shape)
+    # R[0,3] = 1
+    # R[1,3] = -1
 
     # rewards
-    # R = get_rewards(mdp, mdp.board)
+    R = get_rewards(mdp, mdp.board)
 
     print('Rewards')
     print(R)
@@ -84,7 +83,8 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
 
         for s in states:
             #print(f'state: {s}')
-            actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+            # actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+            actions = list(mdp.actions.keys())
 
             expectations_per_action = [expecation_per_action(actions[i], s, mdp, U, R, gamma) for i in range(len(actions))]
 
@@ -127,7 +127,8 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
 # function to return P(s_next | s, a)
 def porbability(s_next, s, a, mdp):
     transition = mdp.transition_function #{up: probs, down: probs, right: probs, left:probs}
-    actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+    # actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+    actions = list(mdp.actions.keys())
     # next possible states given noise
     next_states_possible = [mdp.step(s, a_i) for a_i in actions]
     # probs given selected action
@@ -163,12 +164,12 @@ def get_policy(mdp, U):
     P = np.empty(U.shape).tolist()
 
     # test with 0 rewards:
-    R = np.zeros(U.shape)
-    R[0,3] = 1
-    R[1,3] = -1
+    # R = np.zeros(U.shape)
+    # R[0,3] = 1
+    # R[1,3] = -1
 
     # rewards
-    # R = get_rewards(mdp, mdp.board)
+    R = get_rewards(mdp, mdp.board)
 
     # print('Rewards')
     # print(R)
@@ -176,7 +177,8 @@ def get_policy(mdp, U):
     print(mdp.transition_function)
     for s in states:
 
-        actions = ["UP", "DOWN","RIGHT","LEFT"]
+        # actions = ["UP", "DOWN", "RIGHT", "LEFT"]
+        actions = list(mdp.actions.keys())
 
         expectations = []
         for a in actions:
@@ -213,10 +215,29 @@ def get_policy(mdp, U):
 
     return P
 
+# epsilon greedy action selection
+def epsilon_greedy(Q, s, epsilon, actions, state_index):
+    n = random.uniform(0, 1)
+    if n< epsilon:
+        a = random.choice(actions)
+    else:
+        a_val = max(Q[state_index[s],:])
+        a_index = np.argmax(Q[state_index[s],:])
+        # print(f'a_index is {a_index}')
+        # more indices with max q val
+
+        a = actions[a_index]
+
+    return a
+
+def max_a(Q, s, state_index, action_index):
+    row_actions = Q[state_index[s],:].tolist()
+    max_a_val = max(row_actions)
+    return max_a_val
+
 
 def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_rate=0.7, epsilon=1.0,
                       max_epsilon=1.0, min_epsilon=0.01, decay_rate=0.8):
-    # TODO:
     # Given the mdp and the Qlearning parameters:
     # total_episodes - number of episodes to run for the learning algorithm
     # max_steps - for each episode, the limit for the number of steps
@@ -227,21 +248,86 @@ def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_ra
     # decay_rate - exponential decay rate for exploration prob
     # init_state - the initial state to start each episode from
     # return: the Qtable learned by the algorithm
-    #
+    #  TODO: revise Q-Learning
+    gamma = mdp.gamma
 
-    # ====== YOUR CODE: ======
-    raise NotImplementedError
+    actions = list(mdp.actions.keys()) # ['UP', 'DOWN', 'RIGHT', 'LEFT']
+
+    states = get_states(mdp.board) # [(0,1), (0,2) ...]
+
+    Q = np.zeros((len(states), len(actions)))
+    alpha = learning_rate
+
+    indexes_s = range(len(states))
+    indexes_a = range(len(actions))
+    state_index = dict(zip(states, indexes_s)) # {(0,1):1, (0,2):2 ...}
+    action_index = dict(zip(actions,indexes_a)) # {'UP': 0, 'DOWN': 1, 'RIGHT': 2, 'LEFT': 3}
+
+
+    # test with 0 rewards:
+    # R = np.zeros((3,4))
+    # R[0,3] = 1
+    # R[1,3] = -1
+
+    # rewards
+    R = get_rewards(mdp, mdp.board)
+
+    for episode in range(0,total_episodes):
+        for s in states:
+            a_return = epsilon_greedy(Q, s, epsilon, actions, state_index)
+            a = str(a_return)
+            next_state = mdp.step(s, a)
+
+            # observe reward of the next state
+            reward = R[next_state[0], next_state[1]]
+
+            Q_S_A = Q[state_index[s],action_index[a]]
+            max_a_Q_s_next_a = max_a(Q, next_state, state_index, action_index)
+            Q[state_index[s],action_index[a]] = Q_S_A + alpha*(reward + gamma * max_a_Q_s_next_a - Q_S_A)
+
+            # special cases:
+            if s in mdp.terminal_states:
+                Q[state_index[s],action_index[a]] = 0.0
+            if mdp.board[s[0]][s[1]] == "WALL":
+                Q[state_index[s],action_index[a]] = 0.0
+
+        epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate*episode)
+
+    print(f'Final Q table is: {Q}')
+    return Q.tolist()
     # ========================
 
-
 def q_table_policy_extraction(mdp, qtable):
-    # TODO:
+
     # Given the mdp and the Qtable:
     # return: the policy corresponding to the Qtable
     #
+    Q = np.array(qtable)
+    P = np.empty((3,4)).tolist()
 
-    # ====== YOUR CODE: ======
-    raise NotImplementedError
+    actions = list(mdp.actions.keys()) # ['UP', 'DOWN', 'RIGHT', 'LEFT']
+    states = get_states(mdp.board) # [(0,1), (0,2) ...]
+
+    indexes_s = range(len(states))
+    indexes_a = range(len(actions))
+    state_index = dict(zip(states, indexes_s)) # {(0,1):1, (0,2):2 ...}
+    action_index = dict(zip(actions,indexes_a)) # {'UP': 0, 'DOWN': 1, 'RIGHT': 2, 'LEFT': 3}
+
+    for s in states:
+
+        #print(f's is {s}')
+        a_index = np.argmax(Q[state_index[s],:])
+
+        # add to policy
+        P[s[0]][s[1]] = actions[a_index]
+
+        # special cases:
+        if s in mdp.terminal_states:
+            P[s[0]][s[1]] = 0
+        if mdp.board[s[0]][s[1]] == "WALL":
+            P[s[0]][s[1]] = 'WALL'
+
+    return P
     # ========================
 
 
