@@ -26,6 +26,15 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     #  - Fit the tree on the training data set.
     #  - Test the model on the test set (evaluate the accuracy) and print the result.
 
+
+    print(f'X-TRAIN: {x_train}')
+    print(f'Y-TRAIN: {y_train}')
+    print(f'X-TEST: {x_test}')
+    print(f'Y-TEST: {y_test}')
+
+    id3 = ID3(y_train)
+    id3.entropy(x_test, y_test)
+
     acc = None
 
     # ====== YOUR CODE: ======

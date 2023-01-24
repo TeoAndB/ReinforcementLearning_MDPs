@@ -30,9 +30,16 @@ class ID3:
 
         counts = class_counts(rows, labels)
         impurity = 0.0
-
         # ====== YOUR CODE: ======
-        raise NotImplementedError
+        p = counts.copy()
+        for k in list(counts.keys()):
+            no_label = p[k]
+            total_labels = sum(counts.values())
+            p[k] = no_label/total_labels
+        print(f'p is {p}')
+
+        impurity = sum(-p[k]*np.log2(p[k]) for k in list(p.keys()))
+        print(impurity)
         # ========================
 
         return impurity

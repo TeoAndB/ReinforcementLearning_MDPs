@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
 
         l2_dist_result = l2_dist(mat1, mat2)
 
-        self.assertEqual(l2_dist_result.shape, (2, 1))
+        self.assertEqual((len(l2_dist_result), len(l2_dist_result[0])), (2, 1))
         print('Success')
 
     def test_l2_dist_result(self):
@@ -35,7 +35,6 @@ class Test(unittest.TestCase):
         accuracy_val = accuracy(y1, y2)
         self.assertEqual(accuracy_val, 1 / 3)
         print('Success')
-
 
 
 if __name__ == '__main__':

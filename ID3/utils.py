@@ -14,7 +14,7 @@ from sklearn.model_selection import KFold
 ========================================================================
 """
 
-ID = 123456789  # TODO: change it to your personal ID
+ID = 921220265  # TODO: change it to your personal ID
 random_gen = RandomState(seed=ID)
 print_formatted_values = False
 
@@ -38,10 +38,9 @@ def accuracy(y: np.array, y_pred: np.array):
     assert y.ndim == 1
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
     # ========================
 
-    return accuracy_val
+    return np.count_nonzero(np.logical_and(y, y_pred)) / len(y)
 
 
 def l2_dist(x1: np.array, x2: np.array):
@@ -57,10 +56,15 @@ def l2_dist(x1: np.array, x2: np.array):
     #  Implement L2-distance calculation efficiently as possible.
     #  Note: Use only basic numpy operations, no external code.
 
-    dists = None
-
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    dists = []
+    dists2 = []
+    for i in x1:
+        for j in x2:
+            dists2 = []
+            p = np.sum((i - j) ** 2)
+            dists2.append(np.sqrt(p))
+        dists.append(dists2)
     # ========================
 
     return dists
