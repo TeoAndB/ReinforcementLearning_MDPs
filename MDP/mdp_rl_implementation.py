@@ -34,12 +34,8 @@ def expecation_per_action(action, s, mdp, U, R, gamma):
     # get rewards of the next states
 
     # get value of each next state multiplied with its probability
-    # print(f'utilities next states: {utility_next_states}')
-    #
-    # print(f'probabilities next states: {probabilities}')
-
     values_w_prob_next_states = [(gamma * probabilities[i] * utility_next_states[i]) for i in range(len(next_states))]
-    # print(f'values with prob next states {values_w_prob_next_states}')
+
     # sum up to get expectation value:
     expectation_action_value = sum(values_w_prob_next_states)
 
@@ -62,27 +58,17 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
 
     U_prime = np.array(U_prime, dtype=float)
 
-    # test with 0 rewards:
-    # R = np.zeros(U_prime.shape)
-    # R[0,3] = 1
-    # R[1,3] = -1
-
     # rewards
     R = get_rewards(mdp, mdp.board)
-
-    print('Rewards')
-    print(R)
 
     max_iterations = 300
     iterations = 0
     while True:
-        print(f'\nITERATION: {iterations}')
 
         U = U_prime.copy()
         delta = 0.0
 
         for s in states:
-            #print(f'state: {s}')
             # actions = ["UP", "DOWN", "RIGHT", "LEFT"]
             actions = list(mdp.actions.keys())
 
@@ -92,14 +78,11 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
             max_val = max(expectations_per_action)
             action_best = expectations_per_action.index(max_val)
 
-            #print(f' max value for best action {actions[action_best]} in state {s} is {max_val}')
-
             U_prime[s[0],s[1]] = max_val + R[s[0],s[1]]
 
             if np.abs(U_prime[s[0],s[1]] - U[s[0],s[1]]) > delta:
                 delta = np.abs(U_prime[s[0],s[1]] - U[s[0],s[1]])
-                print(f'delta = {delta}')
-                print(f'value bound for delta: {(epsilon*(1-gamma)/gamma)}')
+
                 if delta < (epsilon*(1-gamma)/gamma):
                     return U
 
@@ -109,12 +92,6 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
                 U_prime[s[0], s[1]] = R[s[0], s[1]]
             if mdp.board[s[0]][s[1]] == "WALL":
                 U_prime[s[0], s[1]] = R[s[0], s[1]]
-
-        print("Utility: ")
-        mdp.print_utility(U)
-
-        print("U_prime: ")
-        print(U_prime)
 
         # testing
         iterations +=1
@@ -133,9 +110,6 @@ def porbability(s_next, s, a, mdp):
     next_states_possible = [mdp.step(s, a_i) for a_i in actions]
     # probs given selected action
     probabilities = list([transition[a]][0])
-    # print(f's: {s}')
-    # print(f'next states possible {next_states_possible}')
-    # print(f'probabilities: {probabilities}')
 
     # check if the next state is a possible state:
     if s_next in next_states_possible:
@@ -163,18 +137,9 @@ def get_policy(mdp, U):
     # policy:
     P = np.empty(U.shape).tolist()
 
-    # test with 0 rewards:
-    # R = np.zeros(U.shape)
-    # R[0,3] = 1
-    # R[1,3] = -1
-
     # rewards
     R = get_rewards(mdp, mdp.board)
 
-    # print('Rewards')
-    # print(R)
-
-    print(mdp.transition_function)
     for s in states:
 
         # actions = ["UP", "DOWN", "RIGHT", "LEFT"]
@@ -198,7 +163,6 @@ def get_policy(mdp, U):
         # index
         idx_max_val_exp = expectations.index(max_val_exp)
         best_action = actions[idx_max_val_exp]
-        # print(f'best action: {best_action}')
 
         # add to policy
         P[s[0]][s[1]] = best_action
@@ -223,7 +187,6 @@ def epsilon_greedy(Q, s, epsilon, actions, state_index):
     else:
         a_val = max(Q[state_index[s],:])
         a_index = np.argmax(Q[state_index[s],:])
-        # print(f'a_index is {a_index}')
         # more indices with max q val
 
         a = actions[a_index]
@@ -248,7 +211,6 @@ def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_ra
     # decay_rate - exponential decay rate for exploration prob
     # init_state - the initial state to start each episode from
     # return: the Qtable learned by the algorithm
-    #  TODO: revise Q-Learning
     gamma = mdp.gamma
 
     actions = list(mdp.actions.keys()) # ['UP', 'DOWN', 'RIGHT', 'LEFT']
@@ -275,7 +237,6 @@ def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_ra
     for episode in range(0,total_episodes):
         s = init_state
         for step in range(0, max_steps):
-
             while s not in mdp.terminal_states:
                 a_return = epsilon_greedy(Q, s, epsilon, actions, state_index)
                 a = str(a_return)
@@ -298,7 +259,6 @@ def q_learning(mdp, init_state, total_episodes=10000, max_steps=999, learning_ra
 
         epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate*episode)
 
-    print(f'Final Q table is: {Q}')
     return Q.tolist()
     # ========================
 
@@ -320,7 +280,6 @@ def q_table_policy_extraction(mdp, qtable):
 
     for s in states:
 
-        #print(f's is {s}')
         a_index = np.argmax(Q[state_index[s],:])
 
         # add to policy
