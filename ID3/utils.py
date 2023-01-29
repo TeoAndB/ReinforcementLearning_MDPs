@@ -37,10 +37,7 @@ def accuracy(y: np.array, y_pred: np.array):
     assert y.shape == y_pred.shape
     assert y.ndim == 1
 
-    # ====== YOUR CODE: ======
-    # ========================
-
-    return np.count_nonzero(np.logical_and(y, y_pred)) / len(y)
+    return sum([y[i] == y_pred[i] for i in range(len(y))]) / len(y)
 
 
 def l2_dist(x1: np.array, x2: np.array):

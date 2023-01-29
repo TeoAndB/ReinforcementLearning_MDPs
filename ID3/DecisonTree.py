@@ -56,7 +56,14 @@ class Question:
     def match(self, example):
         # Compare the feature value in an example to the
         # feature value in this question.
+
+        # print(f'EXAMPLE: {example}')
+        # print(f'COL_IDX: {self.column_idx}')
         val = example[self.column_idx]
+        # print(f'VAL: {val}')
+        # print(f'IS: {is_numeric(val)}')
+        # print(f'VALUE: {self.value}')
+        # print(f'RETURN: {val >= self.value}')
         if is_numeric(val):
             return val >= self.value
         else:

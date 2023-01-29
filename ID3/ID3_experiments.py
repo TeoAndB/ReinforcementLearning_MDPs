@@ -26,19 +26,12 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     #  - Fit the tree on the training data set.
     #  - Test the model on the test set (evaluate the accuracy) and print the result.
 
-
-    print(f'X-TRAIN: {x_train}')
-    print(f'Y-TRAIN: {y_train}')
-    print(f'X-TEST: {x_test}')
-    print(f'Y-TEST: {y_test}')
-
-    id3 = ID3(y_train)
-    id3.entropy(x_test, y_test)
-
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    id3 = ID3(['B', 'M'])
+    id3.fit(x_train, y_train)
+    acc = accuracy(y_test, np.array(id3.predict(x_test)))
     # ========================
 
     assert acc > 0.9, 'you should get an accuracy of at least 90% for the full ID3 decision tree'
@@ -62,7 +55,9 @@ def best_m_test(x_train, y_train, x_test, y_test, min_for_pruning):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    id3 = ID3(['B', 'M'], min_for_pruning)
+    id3.fit(x_train, y_train)
+    acc = accuracy(y_test, np.array(id3.predict(x_test)))
     # ========================
 
     return acc
@@ -87,14 +82,15 @@ if __name__ == '__main__':
            uncomment below code and run it
            modify the value from False to True to plot the experiment result
     """
-    plot_graphs = True
-    best_m = cross_validation_experiment(plot_graph=plot_graphs)
-    print(f'best_m = {best_m}')
+    # plot_graphs = True
+    # best_m = cross_validation_experiment(plot_graph=plot_graphs)
+    # print(f'best_m = {best_m}')
 
     """
         pruning experiment, run with the best parameter
         (*) To run the experiment uncomment below code and run it
     """
+    best_m = 50
     acc = best_m_test(*data_split, min_for_pruning=best_m)
     assert acc > 0.95, 'you should get an accuracy of at least 95% for the pruned ID3 decision tree'
     print(f'Test Accuracy: {acc * 100:.2f}%' if formatted_print else acc)
